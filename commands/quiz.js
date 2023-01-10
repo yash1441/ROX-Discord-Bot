@@ -11,7 +11,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName("quiz")
 		.setDescription("Host a quiz.")
-		.addUserOption((option) =>
+		.addChannelOption((option) =>
 			option
 				.setName("channel")
 				.setDescription("Channel to host the quiz on.")
