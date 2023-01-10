@@ -49,7 +49,7 @@ module.exports = {
 		),
 
 	async execute(interaction, client) {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.reply({ content: "Starting quiz...", ephemeral: true });
 
 		const channel = interaction.options.getChannel("channel");
 		const questions = interaction.options.getInteger("questions");
@@ -105,6 +105,9 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	let shuffledQuestions = questionsDB
 		.sort(() => Math.random() - 0.5)
 		.slice(0, questions);
+
+	await channel.send({ content: "Quiz starting in 20 seconds..." });
+	await new Promise((resolve) => setTimeout(resolve, 20000));
 
 	for (const question of shuffledQuestions) {
 		let embed = new EmbedBuilder()
