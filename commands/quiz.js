@@ -51,7 +51,7 @@ module.exports = {
 		const elimination = interaction.options.getBoolean("elimination") ?? false;
 
 		await interaction.editReply({
-			content: { channel, questions, difficulty, elimination },
+			content: `${channel}, ${questions}, ${difficulty}, ${elimination}`,
 		});
 
 		// let tenantToken = await feishu.authorize(
