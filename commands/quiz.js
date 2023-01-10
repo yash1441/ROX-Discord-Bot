@@ -12,6 +12,7 @@ require("dotenv").config();
 
 let quizOn = false;
 let eliminated = [];
+const wait = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -115,23 +116,23 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 		let oButton = new ButtonBuilder()
 			.setCustomId("oButton")
 			.setStyle(ButtonStyle.Success)
-			.setEmoji("⭕");
+			.setLabel("O");
 
 		let xButton = new ButtonBuilder()
 			.setCustomId("xButton")
 			.setStyle(ButtonStyle.Danger)
-			.setEmoji("❌");
+			.setLabel("X");
 
 		let oButtonDisabled = new ButtonBuilder()
 			.setCustomId("oButton")
 			.setStyle(ButtonStyle.Success)
-			.setEmoji("⭕")
+			.setLabel("O")
 			.setDisabled(true);
 
 		let xButtonDisabled = new ButtonBuilder()
 			.setCustomId("xButton")
 			.setStyle(ButtonStyle.Danger)
-			.setEmoji("❌")
+			.setLabel("X")
 			.setDisabled(true);
 
 		let row = new ActionRowBuilder().addComponents([oButton, xButton]);
@@ -140,10 +141,10 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 			xButtonDisabled,
 		]);
 
-		let message = await channel.send({ embeds: [embed], components: [row] });
+		await channel.send({ embeds: [embed], components: [row] });
 
-		setTimeout(function () {
+		wait(20000).then(() => {
 			message.edit({ embeds: [embed], components: [rowDisabled] });
-		}, 20000);
+		});
 	}
 }
