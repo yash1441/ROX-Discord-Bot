@@ -49,7 +49,13 @@ module.exports = {
 		),
 
 	async execute(interaction, client) {
-		await interaction.reply({ content: "Starting quiz...", ephemeral: true });
+		if (!quizOn)
+			await interaction.reply({ content: "Starting quiz...", ephemeral: true });
+		else
+			return await interaction.reply({
+				content: "Quiz already in progress.",
+				ephemeral: true,
+			});
 
 		const channel = interaction.options.getChannel("channel");
 		const questions = interaction.options.getInteger("questions");
