@@ -12,7 +12,6 @@ require("dotenv").config();
 
 let quizOn = false;
 let eliminated = [];
-const wait = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -141,10 +140,9 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 			xButtonDisabled,
 		]);
 
-		await channel.send({ embeds: [embed], components: [row] });
+		let message = await channel.send({ embeds: [embed], components: [row] });
 
-		wait(20000).then(() => {
-			message.edit({ embeds: [embed], components: [rowDisabled] });
-		});
+		await new Promise((resolve) => setTimeout(resolve, 20000));
+		message.edit({ embeds: [embed], components: [rowDisabled] });
 	}
 }
