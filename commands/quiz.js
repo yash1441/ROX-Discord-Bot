@@ -56,9 +56,7 @@ module.exports = {
 		const difficulty = interaction.options.getString("difficulty") ?? "Random";
 		const elimination = interaction.options.getBoolean("elimination") ?? false;
 
-		await interaction.editReply({
-			content: `${channel}, ${questions}, ${difficulty}, ${elimination}`,
-		});
+		await startQuiz(channel, questions, difficulty, elimination);
 	},
 };
 
