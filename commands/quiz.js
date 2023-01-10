@@ -2,10 +2,16 @@ const {
 	SlashCommandBuilder,
 	PermissionFlagsBits,
 	EmbedBuilder,
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
 } = require("discord.js");
 const fs = require("fs");
 const feishu = require("../feishu.js");
 require("dotenv").config();
+
+let quizOn = false;
+let eliminated = [];
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -53,50 +59,93 @@ module.exports = {
 		await interaction.editReply({
 			content: `${channel}, ${questions}, ${difficulty}, ${elimination}`,
 		});
-
-		// let tenantToken = await feishu.authorize(
-		// 	process.env.FEISHU_ID,
-		// 	process.env.FEISHU_SECRET
-		// );
-
-		// let response = JSON.parse(
-		// 	await feishu.getRecords(
-		// 		tenantToken,
-		// 		process.env.OX_QUIZ_BASE,
-		// 		process.env.OX_QUIZ
-		// 	)
-		// );
 	},
 };
 
-function hasElementOccurringThrice(array) {
-	const counts = {};
+async function startQuiz(channel, questions, difficulty, elimination) {
+	let tenantToken = await feishu.authorize(
+		process.env.FEISHU_ID,
+		process.env.FEISHU_SECRET
+	);
 
-	for (const element of array) {
-		if (element in counts) {
-			counts[element]++;
-		} else {
-			counts[element] = 1;
-		}
+	let response,
+		questionsDB = [];
+
+	switch (difficulty) {
+		case "Random":
+			response = JSON.parse(
+				await feishu.getRecords(
+					tenantToken,
+					process.env.OX_QUIZ_BASE,
+					process.env.OX_QUIZ
+				)
+			);
+			break;
+		default:
+			response = JSON.parse(
+				await feishu.getRecords(
+					tenantToken,
+					process.env.OX_QUIZ_BASE,
+					process.env.OX_QUIZ,
+					`CurrentValue.[Difficulty] = "${difficulty}"`
+				)
+			);
+			break;
 	}
 
-	for (const element in counts) {
-		if (counts[element] === 3) {
-			return element;
-		}
+	for (const record of response.data.items) {
+		questionsDB.push({
+			question: record.fields.Question,
+			answer: record.fields.Answer,
+		});
 	}
 
-	return null;
-}
-
-function containsAllElements(array, mainArray) {
-	const set = new Set(array);
-
-	for (const element of mainArray) {
-		if (!set.has(element)) {
-			return false;
-		}
+	if (questions > questionsDB.length) {
+		questions = questionsDB.length;
 	}
 
-	return true;
+	let shuffledQuestions = questionsDB
+		.sort(() => Math.random() - 0.5)
+		.slice(0, questions);
+
+	for (const question of shuffledQuestions) {
+		let embed = new EmbedBuilder()
+			.setTitle("Quiz")
+			.setDescription(question.question)
+			.setColor(0x00ff00);
+
+		let oButton = new ButtonBuilder()
+			.setCustomId("oButton")
+			.setStyle(ButtonStyle.Success)
+			.setEmoji("⭕");
+
+		let xButton = new ButtonBuilder()
+			.setCustomId("xButton")
+			.setStyle(ButtonStyle.Danger)
+			.setEmoji("❌");
+
+		let oButtonDisabled = new ButtonBuilder()
+			.setCustomId("oButton")
+			.setStyle(ButtonStyle.Success)
+			.setEmoji("⭕")
+			.setDisabled(true);
+
+		let xButtonDisabled = new ButtonBuilder()
+			.setCustomId("xButton")
+			.setStyle(ButtonStyle.Danger)
+			.setEmoji("❌")
+			.setDisabled(true);
+
+		let row = new ActionRowBuilder().addComponents([oButton, xButton]);
+		let rowDisabled = new ActionRowBuilder().addComponents([
+			oButtonDisabled,
+			xButtonDisabled,
+		]);
+
+		let message = await channel.send({ embeds: [embed], components: [row] });
+
+		setTimeout(function () {
+			message.edit({ embeds: [embed], components: [rowDisabled] });
+		}, 20000);
+	}
 }
