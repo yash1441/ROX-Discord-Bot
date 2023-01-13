@@ -57,7 +57,7 @@ module.exports = {
 				}
 
 				for (const creator of creatorList) {
-					const guild = client.guilds.cache.get(process.env.EVO_SERVER);
+					const guild = client.guilds.cache.get(process.env.ROX_SERVER);
 					const member = guild.members.cache.get(creator.discordId);
 					const role =
 						creator.creatorType == "Creator"
