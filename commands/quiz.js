@@ -11,7 +11,7 @@ const feishu = require("../feishu.js");
 require("dotenv").config();
 
 let quizOn = false;
-let eliminated = [];
+let { quizEliminated, quizPoints } = require("../index.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -111,47 +111,78 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	let shuffledQuestions = questionsDB
 		.sort(() => Math.random() - 0.5)
 		.slice(0, questions);
+	let shuffledQuestionsLength = shuffledQuestions.length;
 
 	await channel.send({ content: "Quiz starting in 20 seconds..." });
 	await new Promise((resolve) => setTimeout(resolve, 20000));
 
+	let questionNumber = 0;
+
 	for (const question of shuffledQuestions) {
-		let embed = new EmbedBuilder()
+		const embed = new EmbedBuilder()
 			.setTitle("Quiz")
 			.setDescription(question.question)
-			.setColor(0x00ff00);
+			.setColor(0x00ff00)
+			.setFooter(
+				"Question " + ++questionNumber + "/" + shuffledQuestionsLength
+			);
 
-		let oButton = new ButtonBuilder()
-			.setCustomId("oButton")
-			.setStyle(ButtonStyle.Success)
-			.setLabel("O");
+		let oButton, xButton, buttonId;
 
-		let xButton = new ButtonBuilder()
-			.setCustomId("xButton")
-			.setStyle(ButtonStyle.Danger)
-			.setLabel("X");
+		if (question.answer == "O") {
+			elimination ? (buttonId = "Oe") : (buttonId = "O");
+			oButton = new ButtonBuilder()
+				.setCustomId("ButtonO" + buttonId)
+				.setStyle(ButtonStyle.Success)
+				.setLabel("O");
+			xButton = new ButtonBuilder()
+				.setCustomId("ButtonX" + buttonId)
+				.setStyle(ButtonStyle.Danger)
+				.setLabel("X");
+		} else if (question.answer == "X") {
+			elimination ? (buttonId = "Xe") : (buttonId = "X");
+			oButton = new ButtonBuilder()
+				.setCustomId("ButtonO" + buttonId)
+				.setStyle(ButtonStyle.Success)
+				.setLabel("O");
+			xButton = new ButtonBuilder()
+				.setCustomId("ButtonX" + buttonId)
+				.setStyle(ButtonStyle.Danger)
+				.setLabel("X");
+		}
 
-		let oButtonDisabled = new ButtonBuilder()
+		const oButtonDisabled = new ButtonBuilder()
 			.setCustomId("oButton")
 			.setStyle(ButtonStyle.Success)
 			.setLabel("O")
 			.setDisabled(true);
 
-		let xButtonDisabled = new ButtonBuilder()
+		const xButtonDisabled = new ButtonBuilder()
 			.setCustomId("xButton")
 			.setStyle(ButtonStyle.Danger)
 			.setLabel("X")
 			.setDisabled(true);
 
-		let row = new ActionRowBuilder().addComponents([oButton, xButton]);
-		let rowDisabled = new ActionRowBuilder().addComponents([
+		const row = new ActionRowBuilder().addComponents([oButton, xButton]);
+		const rowDisabled = new ActionRowBuilder().addComponents([
 			oButtonDisabled,
 			xButtonDisabled,
 		]);
 
-		let message = await channel.send({ embeds: [embed], components: [row] });
+		let message = await channel
+			.send({ embeds: [embed], components: [row] })
+			.then(() => {
+				quizEliminated = [];
+			});
 
 		await new Promise((resolve) => setTimeout(resolve, 20000));
 		message.edit({ embeds: [embed], components: [rowDisabled] });
 	}
+
+	await channel.send({ content: "Quiz has ended." });
+	await channel
+		.send({ content: "Results:\n```json" + JSON.stringify(quizPoints) + "```" })
+		.then(() => {
+			quizPoints = [];
+		});
 }

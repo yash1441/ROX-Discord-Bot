@@ -20,6 +20,12 @@ const request = require("request-promise");
 const feishu = require("./feishu.js");
 require("dotenv").config();
 
+let quizPressed = [];
+let quizEliminated = [];
+let quizPoints = [];
+
+module.exports = { quizEliminated, quizPoints };
+
 const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
@@ -118,6 +124,43 @@ client.on("interactionCreate", async (interaction) => {
 			creatorModal.addComponents(firstQuestion, secondQuestion, thirdQuestion);
 
 			await interaction.showModal(creatorModal);
+		} else if (interaction.customId.startsWith("Button")) {
+			await interaction.deferReply({ ephemeral: true });
+
+			if (quizPressed.includes(interaction.user.id)) {
+				await interaction.editReply({
+					content: "You have already answered this question!",
+				});
+			} else if (quizEliminated.includes(interaction.user.id)) {
+				await interaction.editReply({
+					content: "You have been eliminated from the quiz!",
+				});
+			} else quizPressed.push(interaction.user.id);
+
+			let chosenAnswer = interaction.customId[6];
+			let correctAnswer = interaction.customId[7];
+			let elimination = interaction.customId.length > 8 ? true : false;
+
+			if (chosenAnswer === correctAnswer) {
+				if (interaction.user.id in quizPoints) {
+					quizPoints[interaction.user.id] += 1;
+				} else quizPoints[interaction.user.id] = 1;
+
+				await interaction.editReply({
+					content: "Correct answer! You got **1** point!",
+				});
+			} else {
+				if (elimination) {
+					quizEliminated.push(interaction.user.id);
+					await interaction.editReply({
+						content: "Incorrect answer! You have been eliminated!",
+					});
+				} else {
+					await interaction.editReply({
+						content: "Incorrect answer! You got **0** points!",
+					});
+				}
+			}
 		}
 	} else if (interaction.isModalSubmit()) {
 		if (interaction.customId === "creatorModal") {
