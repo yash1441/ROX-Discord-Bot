@@ -148,32 +148,34 @@ client.on("interactionCreate", async (interaction) => {
 		} else if (interaction.customId.startsWith("Button")) {
 			await interaction.deferReply({ ephemeral: true });
 
-			if (quizEliminated.includes(interaction.user.id)) {
+			const discordId = interaction.user.id;
+
+			if (quizEliminated.includes(discordId)) {
 				return await interaction.editReply({
 					content: "You have been eliminated from the quiz!",
 				});
-			} else if (quizPressed.includes(interaction.user.id)) {
+			} else if (quizPressed.includes(discordId)) {
 				return await interaction.editReply({
 					content: "You have already answered this question!",
 				});
-			} else quizPressed.push(interaction.user.id);
+			} else quizPressed.push(discordId);
 
 			let chosenAnswer = interaction.customId[6];
 			let correctAnswer = interaction.customId[7];
 			let elimination = interaction.customId.length > 8 ? true : false;
 
 			if (chosenAnswer === correctAnswer) {
-				if (!quizPoints[interaction.user.id])
-					quizPoints[interaction.user.id] = 0;
-				quizPoints[interaction.user.id]++;
+				if (!isInLeaderboard(discordId))
+					quizPoints.push({ ID: interaction.user.username, Points: 0 });
+				addPoints(discordId, 1);
 				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
-				if (!quizPoints[interaction.user.id])
-					quizPoints[interaction.user.id] = 0;
+				if (!isInLeaderboard(discordId))
+					quizPoints.push({ ID: interaction.user.username, Points: 0 });
 				if (elimination) {
-					quizEliminated.push(interaction.user.id);
+					quizEliminated.push(discordId);
 					return await interaction.editReply({
 						content: "Incorrect answer! You have been eliminated!",
 					});
@@ -386,4 +388,25 @@ async function startQuiz(
 		.then(() => {
 			console.log(JSON.stringify(quizPoints));
 		});
+}
+
+function addPoints(discordId, points) {
+	for (let i = 0; i < quizPoints.length; i++) {
+		if (quizPoints[i].ID === discordId) {
+			quizPoints[i].Points += points;
+			return console.log(
+				`Added ${points} points to ${quizPoints[i].id}'s account.`
+			);
+		}
+	}
+	return `User with ID ${discordId} not found.`;
+}
+
+function isInLeaderboard(discordId) {
+	for (let i = 0; i < quizPoints.length; i++) {
+		if (quizPoints[i].ID === discordId) {
+			return true;
+		}
+	}
+	return false;
 }
