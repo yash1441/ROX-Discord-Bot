@@ -404,7 +404,9 @@ async function addPoints(discordId, points) {
 }
 
 function checkUserId(discordId) {
-	return quizPoints.findIndex((user) => user.ID === discordId) !== -1;
+	const user = quizPoints.find((user) => user.ID === discordId);
+	if (user) return true;
+	else return false;
 }
 
 async function createPointsTable() {
