@@ -82,7 +82,7 @@ client.on("interactionCreate", async (interaction) => {
 	if (interaction.isChatInputCommand()) {
 		const command = interaction.client.commands.get(interaction.commandName);
 
-		if (interaction.commandName == "quiz") console.log("Test");
+		console.log(interaction.commandName);
 
 		if (!command) return;
 
