@@ -128,11 +128,11 @@ client.on("interactionCreate", async (interaction) => {
 			await interaction.deferReply({ ephemeral: true });
 
 			if (quizPressed.includes(interaction.user.id)) {
-				await interaction.editReply({
+				return await interaction.editReply({
 					content: "You have already answered this question!",
 				});
 			} else if (quizEliminated.includes(interaction.user.id)) {
-				await interaction.editReply({
+				return await interaction.editReply({
 					content: "You have been eliminated from the quiz!",
 				});
 			} else quizPressed.push(interaction.user.id);
@@ -146,17 +146,17 @@ client.on("interactionCreate", async (interaction) => {
 					quizPoints[interaction.user.id] += 1;
 				} else quizPoints[interaction.user.id] = 1;
 
-				await interaction.editReply({
+				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
 				if (elimination) {
 					quizEliminated.push(interaction.user.id);
-					await interaction.editReply({
+					return await interaction.editReply({
 						content: "Incorrect answer! You have been eliminated!",
 					});
 				} else {
-					await interaction.editReply({
+					return await interaction.editReply({
 						content: "Incorrect answer! You got **0** points!",
 					});
 				}
