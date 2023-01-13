@@ -384,6 +384,6 @@ async function startQuiz(
 			content: "Results:\n```" + JSON.stringify(quizPoints) + "```",
 		})
 		.then(() => {
-			console.log(quizPoints);
+			console.log(JSON.stringify(quizPoints));
 		});
 }
