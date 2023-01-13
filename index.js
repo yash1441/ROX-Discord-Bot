@@ -24,7 +24,7 @@ let quizPressed = [];
 let quizEliminated = [];
 let quizPoints = [];
 
-module.exports = { quizEliminated, quizPoints };
+module.exports = { quizPressed, quizEliminated, quizPoints };
 
 const client = new Client({
 	intents: [
