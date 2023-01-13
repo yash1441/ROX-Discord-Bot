@@ -163,6 +163,7 @@ client.on("interactionCreate", async (interaction) => {
 			let chosenAnswer = interaction.customId[6];
 			let correctAnswer = interaction.customId[7];
 			let elimination = interaction.customId.length > 8 ? true : false;
+			console.log(checkUserId(discordId));
 
 			if (chosenAnswer === correctAnswer) {
 				if (!checkUserId(discordId))
