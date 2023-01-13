@@ -20,7 +20,10 @@ const request = require("request-promise");
 const feishu = require("./feishu.js");
 require("dotenv").config();
 
-let quizPressed = [];
+let quizPressed = [],
+	quizEliminated = [],
+	quizOn = false,
+	quizPoints = [];
 
 const client = new Client({
 	intents: [
@@ -79,10 +82,8 @@ client.on("ready", () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-	if (interaction.isChatInputCommand()) {
+	if (interaction.isChatInputCommand() && interaction.commandName != "quiz") {
 		const command = interaction.client.commands.get(interaction.commandName);
-
-		console.log(interaction.commandName);
 
 		if (!command) return;
 
@@ -93,6 +94,33 @@ client.on("interactionCreate", async (interaction) => {
 			await interaction.editReply({
 				content: "There was an error while executing this command!",
 			});
+		}
+	} else if (interaction.isCommand()) {
+		if (interaction.customId === "quiz") {
+			if (!quizOn)
+				await interaction.reply({
+					content: "Starting quiz...",
+					ephemeral: true,
+				});
+			else
+				return await interaction.reply({
+					content: "Quiz already in progress.",
+					ephemeral: true,
+				});
+
+			const channel = interaction.options.getChannel("channel");
+			const questions = interaction.options.getInteger("questions");
+			const difficulty =
+				interaction.options.getString("difficulty") ?? "Random";
+			const elimination =
+				interaction.options.getBoolean("elimination") ?? false;
+
+			quizOn = true;
+
+			await startQuiz(channel, questions, difficulty, elimination);
+
+			console.log("quiz ended");
+			quizOn = false;
 		}
 	} else if (interaction.isButton()) {
 		if (interaction.customId === "applyCreator") {
@@ -125,98 +153,32 @@ client.on("interactionCreate", async (interaction) => {
 		} else if (interaction.customId.startsWith("Button")) {
 			await interaction.deferReply({ ephemeral: true });
 
-			let tenantToken = await feishu.authorize(
-				process.env.FEISHU_ID,
-				process.env.FEISHU_SECRET
-			);
-
-			let response = JSON.parse(
-				await feishu.getRecords(
-					tenantToken,
-					process.env.OX_QUIZ_BASE,
-					process.env.OX_POINTS,
-					`CurrentValue.[Discord ID] = "${interaction.user.id}"`
-				)
-			);
-
-			let update = false;
-			let records = response.data.items[0];
-
-			response.data.total ? (update = true) : (update = false);
-
-			if (update) {
-				if (records.fields.Answered) {
-					return await interaction.editReply({
-						content: "You have already answered this question!",
-					});
-				} else if (records.fields.Eliminated) {
-					return await interaction.editReply({
-						content: "You have been eliminated from the quiz!",
-					});
-				}
-			}
+			if (quizEliminated.includes(interaction.user.id)) {
+				return await interaction.editReply({
+					content: "You have already answered this question!",
+				});
+			} else if (quizPressed.includes(interaction.user.id)) {
+				return await interaction.editReply({
+					content: "You have been eliminated from the quiz!",
+				});
+			} else quizPressed.push(interaction.user.id);
 
 			let chosenAnswer = interaction.customId[6];
 			let correctAnswer = interaction.customId[7];
 			let elimination = interaction.customId.length > 8 ? true : false;
 
 			if (chosenAnswer === correctAnswer) {
-				if (update) {
-					await feishu.updateRecord(
-						tenantToken,
-						process.env.OX_QUIZ_BASE,
-						process.env.OX_POINTS,
-						records.record_id,
-						{
-							fields: {
-								Answered: true,
-								Points: parseInt(records.fields.Points) + 1,
-							},
-						}
-					);
-				} else {
-					await feishu.createRecord(
-						tenantToken,
-						process.env.OX_QUIZ_BASE,
-						process.env.OX_POINTS,
-						records.record_id,
-						{
-							fields: {
-								"Discord ID": interaction.user.id,
-								Answered: true,
-								Points: 1,
-							},
-						}
-					);
-				}
+				if (!interaction.user.id in quizPoints)
+					quizPoints[interaction.user.id] = 0;
+				quizPoints[interaction.user.id] += 1;
 				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
+				if (!interaction.user.id in quizPoints)
+					quizPoints[interaction.user.id] = 0;
 				if (elimination) {
-					if (update) {
-						await feishu.updateRecord(
-							tenantToken,
-							process.env.OX_QUIZ_BASE,
-							process.env.OX_POINTS,
-							records.record_id,
-							{ fields: { Eliminated: true } }
-						);
-					} else {
-						await feishu.createRecord(
-							tenantToken,
-							process.env.OX_QUIZ_BASE,
-							process.env.OX_POINTS,
-							records.record_id,
-							{
-								fields: {
-									"Discord ID": interaction.user.id,
-									Points: 0,
-									Eliminated: true,
-								},
-							}
-						);
-					}
+					quizEliminated.push(interaction.user.id);
 					return await interaction.editReply({
 						content: "Incorrect answer! You have been eliminated!",
 					});
@@ -290,3 +252,137 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+async function startQuiz(channel, questions, difficulty, elimination) {
+	let tenantToken = await feishu.authorize(
+		process.env.FEISHU_ID,
+		process.env.FEISHU_SECRET
+	);
+
+	quizPoints.length = 0;
+	quizEliminated.length = 0;
+	quizPressed.length = 0;
+
+	let response,
+		questionsDB = [];
+
+	switch (difficulty) {
+		case "Random":
+			response = JSON.parse(
+				await feishu.getRecords(
+					tenantToken,
+					process.env.OX_QUIZ_BASE,
+					process.env.OX_QUIZ
+				)
+			);
+			break;
+		default:
+			response = JSON.parse(
+				await feishu.getRecords(
+					tenantToken,
+					process.env.OX_QUIZ_BASE,
+					process.env.OX_QUIZ,
+					`CurrentValue.[Difficulty] = "${difficulty}"`
+				)
+			);
+			break;
+	}
+
+	for (const record of response.data.items) {
+		questionsDB.push({
+			question: record.fields.Question,
+			answer: record.fields.Answer,
+		});
+	}
+
+	if (questions > questionsDB.length) {
+		questions = questionsDB.length;
+	}
+
+	let shuffledQuestions = questionsDB
+		.sort(() => Math.random() - 0.5)
+		.slice(0, questions);
+	let shuffledQuestionsLength = shuffledQuestions.length;
+
+	await channel.send({ content: "Quiz starting in 20 seconds..." });
+
+	let questionNumber = 0;
+
+	for (const question of shuffledQuestions) {
+		await new Promise((resolve) => setTimeout(resolve, 20000));
+
+		const embed = new EmbedBuilder()
+			.setTitle("Quiz")
+			.setDescription(question.question)
+			.setColor(0x00ff00)
+			.setFooter({
+				text:
+					"Question " +
+					(++questionNumber).toString() +
+					"/" +
+					shuffledQuestionsLength,
+			});
+
+		let oButton, xButton, buttonId;
+
+		if (question.answer == "O") {
+			elimination ? (buttonId = "Oe") : (buttonId = "O");
+			oButton = new ButtonBuilder()
+				.setCustomId("ButtonO" + buttonId)
+				.setStyle(ButtonStyle.Success)
+				.setLabel("O");
+			xButton = new ButtonBuilder()
+				.setCustomId("ButtonX" + buttonId)
+				.setStyle(ButtonStyle.Danger)
+				.setLabel("X");
+		} else if (question.answer == "X") {
+			elimination ? (buttonId = "Xe") : (buttonId = "X");
+			oButton = new ButtonBuilder()
+				.setCustomId("ButtonO" + buttonId)
+				.setStyle(ButtonStyle.Success)
+				.setLabel("O");
+			xButton = new ButtonBuilder()
+				.setCustomId("ButtonX" + buttonId)
+				.setStyle(ButtonStyle.Danger)
+				.setLabel("X");
+		}
+
+		const oButtonDisabled = new ButtonBuilder()
+			.setCustomId("oButton")
+			.setStyle(ButtonStyle.Success)
+			.setLabel("O")
+			.setDisabled(true);
+
+		const xButtonDisabled = new ButtonBuilder()
+			.setCustomId("xButton")
+			.setStyle(ButtonStyle.Danger)
+			.setLabel("X")
+			.setDisabled(true);
+
+		const row = new ActionRowBuilder().addComponents([oButton, xButton]);
+		const rowDisabled = new ActionRowBuilder().addComponents([
+			oButtonDisabled,
+			xButtonDisabled,
+		]);
+
+		await channel
+			.send({ embeds: [embed], components: [row] })
+			.then((message) => {
+				quizPressed.length = 0;
+				setTimeout(function () {
+					message.edit({ embeds: [embed], components: [rowDisabled] });
+				}, 20000);
+			});
+	}
+
+	await new Promise((resolve) => setTimeout(resolve, 20000));
+
+	await channel.send({ content: "Quiz has ended." });
+	await channel
+		.send({
+			content: "Results:\n```json" + JSON.stringify(index.quizPoints) + "```",
+		})
+		.then(() => {
+			console.log(index.quizPoints);
+		});
+}
