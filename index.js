@@ -85,8 +85,6 @@ client.on("interactionCreate", async (interaction) => {
 	if (interaction.isChatInputCommand() && interaction.commandName != "quiz") {
 		const command = interaction.client.commands.get(interaction.commandName);
 
-		console.log(interaction.commandName);
-		console.log(interaction.customId);
 		if (!command) return;
 
 		try {
@@ -97,7 +95,7 @@ client.on("interactionCreate", async (interaction) => {
 				content: "There was an error while executing this command!",
 			});
 		}
-	} else if (interaction.customId === "quiz") {
+	} else if (interaction.commandName === "quiz") {
 		if (!quizOn)
 			await interaction.reply({
 				content: "Starting quiz...",
