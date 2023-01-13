@@ -123,12 +123,13 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 			.setTitle("Quiz")
 			.setDescription(question.question)
 			.setColor(0x00ff00)
-			.setFooter(
-				"Question " +
+			.setFooter({
+				text:
+					"Question " +
 					(++questionNumber).toString() +
 					"/" +
-					shuffledQuestionsLength
-			);
+					shuffledQuestionsLength,
+			});
 
 		let oButton, xButton, buttonId;
 
