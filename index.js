@@ -151,11 +151,11 @@ client.on("interactionCreate", async (interaction) => {
 
 			if (quizEliminated.includes(interaction.user.id)) {
 				return await interaction.editReply({
-					content: "You have already answered this question!",
+					content: "You have been eliminated from the quiz!",
 				});
 			} else if (quizPressed.includes(interaction.user.id)) {
 				return await interaction.editReply({
-					content: "You have been eliminated from the quiz!",
+					content: "You have already answered this question!",
 				});
 			} else quizPressed.push(interaction.user.id);
 
@@ -376,9 +376,9 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	await channel.send({ content: "Quiz has ended." });
 	await channel
 		.send({
-			content: "Results:\n```json" + JSON.stringify(index.quizPoints) + "```",
+			content: "Results:\n```json" + JSON.stringify(quizPoints) + "```",
 		})
 		.then(() => {
-			console.log(index.quizPoints);
+			console.log(quizPoints);
 		});
 }
