@@ -11,7 +11,7 @@ const feishu = require("../feishu.js");
 require("dotenv").config();
 
 let quizOn = false;
-let { quizEliminated, quizPoints } = require("../index.js");
+let { quizPressed, quizEliminated, quizPoints } = require("../index.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -114,11 +114,12 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	let shuffledQuestionsLength = shuffledQuestions.length;
 
 	await channel.send({ content: "Quiz starting in 20 seconds..." });
-	await new Promise((resolve) => setTimeout(resolve, 20000));
 
 	let questionNumber = 0;
 
 	for (const question of shuffledQuestions) {
+		await new Promise((resolve) => setTimeout(resolve, 20000));
+
 		const embed = new EmbedBuilder()
 			.setTitle("Quiz")
 			.setDescription(question.question)
@@ -177,12 +178,11 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 			.send({ embeds: [embed], components: [row] })
 			.then((message) => {
 				quizEliminated = [];
+				quizPressed = [];
 				setTimeout(function () {
 					message.edit({ embeds: [embed], components: [rowDisabled] });
 				}, 20000);
 			});
-
-		await new Promise((resolve) => setTimeout(resolve, 20000));
 	}
 
 	await channel.send({ content: "Quiz has ended." });
