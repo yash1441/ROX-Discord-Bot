@@ -163,17 +163,16 @@ client.on("interactionCreate", async (interaction) => {
 			let chosenAnswer = interaction.customId[6];
 			let correctAnswer = interaction.customId[7];
 			let elimination = interaction.customId.length > 8 ? true : false;
-			console.log(checkUserId(discordId));
 
 			if (chosenAnswer === correctAnswer) {
-				if (!checkUserId(discordId))
+				if (!checkUserId(interaction.user.username))
 					quizPoints.push({ ID: interaction.user.username, Points: 1 });
-				else await addPoints(discordId, 1);
+				else await addPoints(interaction.user.username, 1);
 				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
-				if (!checkUserId(discordId))
+				if (!checkUserId(interaction.user.username))
 					quizPoints.push({ ID: interaction.user.username, Points: 0 });
 				if (elimination) {
 					quizEliminated.push(discordId);
@@ -392,13 +391,11 @@ async function startQuiz(
 async function addPoints(discordId, points) {
 	for (let i = 0; i < quizPoints.length; i++) {
 		if (quizPoints[i].ID == discordId) {
-			console.log("Bingo");
 			quizPoints[i].Points += points;
-			console.log(quizPoints[i].Points);
 			return console.log(
 				`Added ${points} points to ${quizPoints[i].id}'s account.`
 			);
-		} else console.log("Bango");
+		}
 	}
 	return console.log(`User with ID ${discordId} not found.`);
 }
