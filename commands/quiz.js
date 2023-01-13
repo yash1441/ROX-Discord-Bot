@@ -177,8 +177,8 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 		await channel
 			.send({ embeds: [embed], components: [row] })
 			.then((message) => {
-				quizEliminated = [];
-				quizPressed = [];
+				quizEliminated.length = 0;
+				quizPressed.length = 0;
 				setTimeout(function () {
 					message.edit({ embeds: [embed], components: [rowDisabled] });
 				}, 20000);
