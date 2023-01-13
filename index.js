@@ -95,33 +95,29 @@ client.on("interactionCreate", async (interaction) => {
 				content: "There was an error while executing this command!",
 			});
 		}
-	} else if (interaction.isCommand()) {
-		if (interaction.customId === "quiz") {
-			if (!quizOn)
-				await interaction.reply({
-					content: "Starting quiz...",
-					ephemeral: true,
-				});
-			else
-				return await interaction.reply({
-					content: "Quiz already in progress.",
-					ephemeral: true,
-				});
+	} else if (interaction.customId === "quiz") {
+		if (!quizOn)
+			await interaction.reply({
+				content: "Starting quiz...",
+				ephemeral: true,
+			});
+		else
+			return await interaction.reply({
+				content: "Quiz already in progress.",
+				ephemeral: true,
+			});
 
-			const channel = interaction.options.getChannel("channel");
-			const questions = interaction.options.getInteger("questions");
-			const difficulty =
-				interaction.options.getString("difficulty") ?? "Random";
-			const elimination =
-				interaction.options.getBoolean("elimination") ?? false;
+		const channel = interaction.options.getChannel("channel");
+		const questions = interaction.options.getInteger("questions");
+		const difficulty = interaction.options.getString("difficulty") ?? "Random";
+		const elimination = interaction.options.getBoolean("elimination") ?? false;
 
-			quizOn = true;
+		quizOn = true;
 
-			await startQuiz(channel, questions, difficulty, elimination);
+		await startQuiz(channel, questions, difficulty, elimination);
 
-			console.log("quiz ended");
-			quizOn = false;
-		}
+		console.log("quiz ended");
+		quizOn = false;
 	} else if (interaction.isButton()) {
 		if (interaction.customId === "applyCreator") {
 			const creatorModal = new ModalBuilder()
