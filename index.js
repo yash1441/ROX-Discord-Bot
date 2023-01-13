@@ -150,6 +150,10 @@ client.on("interactionCreate", async (interaction) => {
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
+				if (!interaction.user.id in quizPoints) {
+					quizPoints[interaction.user.id] = 0;
+				}
+
 				if (elimination) {
 					quizEliminated.push(interaction.user.id);
 					return await interaction.editReply({
