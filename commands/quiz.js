@@ -11,7 +11,7 @@ const feishu = require("../feishu.js");
 require("dotenv").config();
 
 let quizOn = false;
-let { quizPressed, quizEliminated, quizPoints } = require("../index.js");
+let index = require("../index.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -177,8 +177,8 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 		await channel
 			.send({ embeds: [embed], components: [row] })
 			.then((message) => {
-				quizEliminated.length = 0;
-				quizPressed.length = 0;
+				index.quizEliminated.length = 0;
+				index.quizPressed.length = 0;
 				setTimeout(function () {
 					message.edit({ embeds: [embed], components: [rowDisabled] });
 				}, 20000);
@@ -189,9 +189,11 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 
 	await channel.send({ content: "Quiz has ended." });
 	await channel
-		.send({ content: "Results:\n```json" + JSON.stringify(quizPoints) + "```" })
+		.send({
+			content: "Results:\n```json" + JSON.stringify(index.quizPoints) + "```",
+		})
 		.then(() => {
-			console.log(quizPoints);
-			quizPoints.length = 0;
+			console.log(index.quizPoints);
+			index.quizPoints.length = 0;
 		});
 }
