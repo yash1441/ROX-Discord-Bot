@@ -116,7 +116,6 @@ client.on("interactionCreate", async (interaction) => {
 
 		await startQuiz(channel, questions, difficulty, elimination);
 
-		console.log("quiz ended");
 		quizOn = false;
 	} else if (interaction.isButton()) {
 		if (interaction.customId === "applyCreator") {
@@ -164,14 +163,14 @@ client.on("interactionCreate", async (interaction) => {
 			let elimination = interaction.customId.length > 8 ? true : false;
 
 			if (chosenAnswer === correctAnswer) {
-				if (!interaction.user.id in quizPoints)
+				if (!quizPoints[interaction.user.id])
 					quizPoints[interaction.user.id] = 0;
-				quizPoints[interaction.user.id] += 1;
+				quizPoints[interaction.user.id]++;
 				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
-				if (!interaction.user.id in quizPoints)
+				if (!quizPoints[interaction.user.id])
 					quizPoints[interaction.user.id] = 0;
 				if (elimination) {
 					quizEliminated.push(interaction.user.id);
@@ -376,7 +375,7 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	await channel.send({ content: "Quiz has ended." });
 	await channel
 		.send({
-			content: "Results:\n```json" + JSON.stringify(quizPoints) + "```",
+			content: "Results:\n```json" + quizPoints + "```",
 		})
 		.then(() => {
 			console.log(quizPoints);
