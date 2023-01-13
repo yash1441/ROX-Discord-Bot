@@ -114,7 +114,7 @@ client.on("interactionCreate", async (interaction) => {
 
 		quizOn = true;
 
-		await startQuiz(channel, questions, difficulty, elimination);
+		await startQuiz(channel, questions, difficulty, elimination, 5000);
 
 		quizOn = false;
 	} else if (interaction.isButton()) {
@@ -248,7 +248,13 @@ client.on("interactionCreate", async (interaction) => {
 
 client.login(process.env.DISCORD_TOKEN);
 
-async function startQuiz(channel, questions, difficulty, elimination) {
+async function startQuiz(
+	channel,
+	questions,
+	difficulty,
+	elimination,
+	time = 20000
+) {
 	let tenantToken = await feishu.authorize(
 		process.env.FEISHU_ID,
 		process.env.FEISHU_SECRET
@@ -304,7 +310,7 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	let questionNumber = 0;
 
 	for (const question of shuffledQuestions) {
-		await new Promise((resolve) => setTimeout(resolve, 20000));
+		await new Promise((resolve) => setTimeout(resolve, time));
 
 		const embed = new EmbedBuilder()
 			.setTitle("Quiz")
@@ -366,16 +372,16 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 				quizPressed.length = 0;
 				setTimeout(function () {
 					message.edit({ embeds: [embed], components: [rowDisabled] });
-				}, 20000);
+				}, time);
 			});
 	}
 
-	await new Promise((resolve) => setTimeout(resolve, 20000));
+	await new Promise((resolve) => setTimeout(resolve, time));
 
 	await channel.send({ content: "Quiz has ended." });
 	await channel
 		.send({
-			content: "Results:\n```json" + quizPoints + "```",
+			content: "Results:\n```" + JSON.stringify(quizPoints) + "```",
 		})
 		.then(() => {
 			console.log(quizPoints);
