@@ -18,14 +18,9 @@ const fs = require("fs");
 const path = require("path");
 const request = require("request-promise");
 const feishu = require("./feishu.js");
-const quiz = require("./commands/quiz.js");
 require("dotenv").config();
 
 let quizPressed = [];
-let quizEliminated = [];
-let quizPoints = [];
-
-module.exports = { quizPressed, quizEliminated, quizPoints };
 
 const client = new Client({
 	intents: [
@@ -87,6 +82,8 @@ client.on("interactionCreate", async (interaction) => {
 	if (interaction.isChatInputCommand()) {
 		const command = interaction.client.commands.get(interaction.commandName);
 
+		if (interaction.commandName == "quiz") console.log("Test");
+
 		if (!command) return;
 
 		try {
@@ -128,35 +125,98 @@ client.on("interactionCreate", async (interaction) => {
 		} else if (interaction.customId.startsWith("Button")) {
 			await interaction.deferReply({ ephemeral: true });
 
-			if (quiz.quizPressed.includes(interaction.user.id)) {
-				return await interaction.editReply({
-					content: "You have already answered this question!",
-				});
-			} else if (quiz.quizEliminated.includes(interaction.user.id)) {
-				return await interaction.editReply({
-					content: "You have been eliminated from the quiz!",
-				});
-			} else quiz.quizPressed.push(interaction.user.id);
+			let tenantToken = await feishu.authorize(
+				process.env.FEISHU_ID,
+				process.env.FEISHU_SECRET
+			);
+
+			let response = JSON.parse(
+				await feishu.getRecords(
+					tenantToken,
+					process.env.OX_QUIZ_BASE,
+					process.env.OX_POINTS,
+					`CurrentValue.[Discord ID] = "${interaction.user.id}"`
+				)
+			);
+
+			let update = false;
+			let records = response.data.items[0];
+
+			response.data.total ? (update = true) : (update = false);
+
+			if (update) {
+				if (records.fields.Answered) {
+					return await interaction.editReply({
+						content: "You have already answered this question!",
+					});
+				} else if (records.fields.Eliminated) {
+					return await interaction.editReply({
+						content: "You have been eliminated from the quiz!",
+					});
+				}
+			}
 
 			let chosenAnswer = interaction.customId[6];
 			let correctAnswer = interaction.customId[7];
 			let elimination = interaction.customId.length > 8 ? true : false;
 
 			if (chosenAnswer === correctAnswer) {
-				if (interaction.user.id in quiz.quizPoints) {
-					quiz.quizPoints[interaction.user.id] += 1;
-				} else quiz.quizPoints[interaction.user.id] = 1;
-
+				if (update) {
+					await feishu.updateRecord(
+						tenantToken,
+						process.env.OX_QUIZ_BASE,
+						process.env.OX_POINTS,
+						records.record_id,
+						{
+							fields: {
+								Answered: true,
+								Points: parseInt(records.fields.Points) + 1,
+							},
+						}
+					);
+				} else {
+					await feishu.createRecord(
+						tenantToken,
+						process.env.OX_QUIZ_BASE,
+						process.env.OX_POINTS,
+						records.record_id,
+						{
+							fields: {
+								"Discord ID": interaction.user.id,
+								Answered: true,
+								Points: 1,
+							},
+						}
+					);
+				}
 				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
-				if (!interaction.user.id in quiz.quizPoints) {
-					quiz.quizPoints[interaction.user.id] = 0;
-				}
-
 				if (elimination) {
-					quiz.quizEliminated.push(interaction.user.id);
+					if (update) {
+						await feishu.updateRecord(
+							tenantToken,
+							process.env.OX_QUIZ_BASE,
+							process.env.OX_POINTS,
+							records.record_id,
+							{ fields: { Eliminated: true } }
+						);
+					} else {
+						await feishu.createRecord(
+							tenantToken,
+							process.env.OX_QUIZ_BASE,
+							process.env.OX_POINTS,
+							records.record_id,
+							{
+								fields: {
+									"Discord ID": interaction.user.id,
+									Points: 0,
+									Eliminated: true,
+								},
+							}
+						);
+					}
 					return await interaction.editReply({
 						content: "Incorrect answer! You have been eliminated!",
 					});

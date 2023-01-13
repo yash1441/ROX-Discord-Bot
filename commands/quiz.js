@@ -11,7 +11,6 @@ const feishu = require("../feishu.js");
 require("dotenv").config();
 
 let quizOn = false;
-let index = require("../index.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -118,6 +117,19 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	let questionNumber = 0;
 
 	for (const question of shuffledQuestions) {
+		let tenantToken = await feishu.authorize(
+			process.env.FEISHU_ID,
+			process.env.FEISHU_SECRET
+		);
+
+		let response = JSON.parse(
+			await feishu.getRecords(
+				tenantToken,
+				process.env.OX_QUIZ_BASE,
+				process.env.OX_POINTS
+			)
+		);
+
 		await new Promise((resolve) => setTimeout(resolve, 20000));
 
 		const embed = new EmbedBuilder()
@@ -177,8 +189,6 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 		await channel
 			.send({ embeds: [embed], components: [row] })
 			.then((message) => {
-				index.quizEliminated.length = 0;
-				index.quizPressed.length = 0;
 				setTimeout(function () {
 					message.edit({ embeds: [embed], components: [rowDisabled] });
 				}, 20000);
@@ -194,6 +204,5 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 		})
 		.then(() => {
 			console.log(index.quizPoints);
-			index.quizPoints.length = 0;
 		});
 }
