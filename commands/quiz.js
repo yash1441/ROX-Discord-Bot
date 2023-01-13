@@ -173,14 +173,14 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 			xButtonDisabled,
 		]);
 
-		const message = await channel
+		const msg = await channel
 			.send({ embeds: [embed], components: [row] })
-			.then(() => {
+			.then((message) => {
 				quizEliminated = [];
 			});
 
 		await new Promise((resolve) => setTimeout(resolve, 20000));
-		message.edit({ embeds: [embed], components: [rowDisabled] });
+		msg.edit({ embeds: [embed], components: [rowDisabled] });
 	}
 
 	await channel.send({ content: "Quiz has ended." });
