@@ -191,6 +191,7 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 	await channel
 		.send({ content: "Results:\n```json" + JSON.stringify(quizPoints) + "```" })
 		.then(() => {
-			quizPoints = [];
+			console.log(quizPoints);
+			quizPoints.length = 0;
 		});
 }
