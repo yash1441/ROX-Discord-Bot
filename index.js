@@ -382,27 +382,34 @@ async function startQuiz(
 	await new Promise((resolve) => setTimeout(resolve, time));
 
 	await channel.send({ content: "Quiz has ended." });
-	await channel
-		.send({
-			content: "Results:\n```" + JSON.stringify(quizPoints) + "```",
-		})
-		.then(() => {
-			console.log(JSON.stringify(quizPoints));
-		});
+	const message = await createPointsTable();
+	await channel.send({
+		content: "Results:\n```" + message + "```",
+	});
 }
 
 async function addPoints(discordId, points) {
 	for (let i = 0; i < quizPoints.length; i++) {
-		if (quizPoints[i].ID === discordId) {
+		if (quizPoints[i].ID == discordId) {
+			console.log("Bingo");
 			quizPoints[i].Points += points;
+			console.log(quizPoints[i].Points);
 			return console.log(
 				`Added ${points} points to ${quizPoints[i].id}'s account.`
 			);
-		}
+		} else console.log("Bango");
 	}
 	return console.log(`User with ID ${discordId} not found.`);
 }
 
 function checkUserId(discordId) {
 	return quizPoints.findIndex((user) => user.ID === discordId) !== -1;
+}
+
+async function createPointsTable() {
+	let table = "Name  | Points\n";
+	for (let i = 0; i < quizPoints.length; i++) {
+		table += `${quizPoints[i].ID}    | ${quizPoints[i].Points}\n`;
+	}
+	return table;
 }
