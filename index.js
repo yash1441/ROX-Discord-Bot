@@ -165,14 +165,14 @@ client.on("interactionCreate", async (interaction) => {
 			let elimination = interaction.customId.length > 8 ? true : false;
 
 			if (chosenAnswer === correctAnswer) {
-				if (!isInLeaderboard(discordId))
+				if (!checkUserId(discordId))
 					quizPoints.push({ ID: interaction.user.username, Points: 0 });
 				addPoints(discordId, 1);
 				return await interaction.editReply({
 					content: "Correct answer! You got **1** point!",
 				});
 			} else {
-				if (!isInLeaderboard(discordId))
+				if (!checkUserId(discordId))
 					quizPoints.push({ ID: interaction.user.username, Points: 0 });
 				if (elimination) {
 					quizEliminated.push(discordId);
@@ -263,6 +263,7 @@ async function startQuiz(
 	);
 
 	quizPoints.length = 0;
+	quizPoints = [];
 	quizEliminated.length = 0;
 	quizPressed.length = 0;
 
@@ -399,14 +400,9 @@ function addPoints(discordId, points) {
 			);
 		}
 	}
-	return `User with ID ${discordId} not found.`;
+	return console.log(`User with ID ${discordId} not found.`);
 }
 
-function isInLeaderboard(discordId) {
-	for (let i = 0; i < quizPoints.length; i++) {
-		if (quizPoints[i].ID === discordId) {
-			return true;
-		}
-	}
-	return false;
+function checkUserId(discordId) {
+	return quizPoints.findIndex((user) => user.ID === discordId) !== -1;
 }
