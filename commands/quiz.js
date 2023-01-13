@@ -185,6 +185,8 @@ async function startQuiz(channel, questions, difficulty, elimination) {
 			});
 	}
 
+	await new Promise((resolve) => setTimeout(resolve, 20000));
+
 	await channel.send({ content: "Quiz has ended." });
 	await channel
 		.send({ content: "Results:\n```json" + JSON.stringify(quizPoints) + "```" })
