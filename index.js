@@ -85,6 +85,8 @@ client.on("interactionCreate", async (interaction) => {
 	if (interaction.isChatInputCommand() && interaction.customId != "quiz") {
 		const command = interaction.client.commands.get(interaction.commandName);
 
+		console.log(interaction.commandName);
+		console.log(interaction.customId);
 		if (!command) return;
 
 		try {
