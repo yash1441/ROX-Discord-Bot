@@ -114,7 +114,7 @@ client.on("interactionCreate", async (interaction) => {
 
 		quizOn = true;
 
-		await startQuiz(channel, questions, difficulty, elimination, 5000);
+		await startQuiz(channel, questions, difficulty, elimination, 20000);
 
 		quizOn = false;
 	} else if (interaction.isButton()) {
